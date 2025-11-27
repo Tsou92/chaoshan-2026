@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026春节潮汕寻味之旅</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* 移除 Google Fonts，改用系统默认字体，既快又美观 */
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: #fdfbf7;
+        }
+        .serif {
+            font-family: "Songti SC", "SimSun", "Noto Serif SC", serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .map-card {
+            transition: all 0.3s ease;
+        }
+        .map-card:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- 移至底部并更新为 UMD 版本以确保全局变量 React 可用 -->
+    <script crossorigin src="https://cdn.staticfile.net/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdn.staticfile.net/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.staticfile.net/babel-standalone/7.22.17/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 图标组件 (使用 SVG 替代 Lucide React 组件以确保兼容性)
+        const IconMap = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>;
+        const IconUtensils = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>;
+        const IconHotel = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 22v-6.57"/><path d="M12 11h.01"/><path d="M12 7h.01"/><path d="M14 15.43V22"/><path d="M15 16a5 5 0 0 0-6 0"/><path d="M16 11h.01"/><path d="M16 7h.01"/><path d="M8 11h.01"/><path d="M8 7h.01"/><rect x="4" y="2" width="16" height="20" rx="2"/></svg>;
+        const IconAlert = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>;
+        const IconBike = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>;
+        const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+        const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>;
+
+        const CopyButton = ({ text }) => {
+            const [copied, setCopied] = useState(false);
+
+            const handleCopy = (e) => {
+                e.stopPropagation();
+                // Create a temporary textarea to handle the copy
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                } catch (err) {
+                    console.error('Failed to copy', err);
+                }
+                document.body.removeChild(textarea);
+            };
+
+            return (
+                <button 
+                    onClick={handleCopy}
+                    className="ml-2 p-1 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-gray-600"
+                    title="复制地址"
+                >
+                    {copied ? <IconCheck /> : <IconCopy />}
+                </button>
+            );
+        };
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('itinerary');
+            const [selectedDay, setSelectedDay] = useState(0);
+
+            const schedule = [
+                {
+                    date: "2月18日 (大年初二)",
+                    title: "初抵汕头 · 寻味老市区",
+                    city: "汕头",
+                    weather: "15-22°C 晴",
+                    location: "住宿推荐：万象城/苏宁广场附近（交通便利，离老区近但环境好）",
+                    searchKey: "汕头龙光世纪海岸 或 华润万象城周边",
+                    activities: [
+                        { time: "14:00", type: "arrival", title: "抵达 & 租车", desc: "高铁站打车到酒店。在酒店附近租小电驴（一定要问清楚春节是否涨价，通常50-80元/天）。注意：一家三口一辆车可能被交警拦，建议租两辆或带儿童座椅的大车。" },
+                        { time: "16:00", type: "visit", title: "小公园 (边缘游)", desc: "骑车去小公园，但不要挤进核心区。看骑楼外观即可。去【西堤公园】看日落，遥望礐石大桥。" },
+                        { time: "18:00", type: "food", title: "晚餐：老姿娘夜粥 或 桂园白粥", desc: "不去'富苑'排队。找这种本地人吃的夜粥档，卤水、生腌（肠胃弱慎吃）、鱼饭是必点。", address: "长平路老姿娘夜粥" },
+                        { time: "20:00", type: "snack", title: "甜汤：广场老牌豆花甜汤", desc: "如果没开门，路边随便一家老式甜汤店的姜薯汤都不错。", address: "公园路汇涛花园底商" }
+                    ]
+                },
+                {
+                    date: "2月19日 (大年初三)",
+                    title: "汕头深度 · 避开人海吃牛肉",
+                    city: "汕头",
+                    weather: "16-23°C 多云",
+                    activities: [
+                        { time: "09:00", type: "food", title: "早餐：小吴肠粉(主要看队) 或 龙眼路周边", desc: "小吴如果排队超过20分钟就放弃。去吃【金新肠粉】或【老尾猪血汤】。", address: "龙眼南路/金新路" },
+                        { time: "11:00", type: "visit", title: "汕头旅社 & 轮渡", desc: "骑车打卡'汕头'两个字的大牌子，然后坐广场轮渡（含摩托车）体验内海湾风情（1元钱的快乐）。" },
+                        { time: "13:30", type: "food", title: "午餐：牛肉火锅 (非网红)", desc: "不去'八合里'总店。推荐【金兰牛肉】或【围炉夜话】。重点：下午2点去，人少肉鲜。", address: "金平区金兰牛肉" },
+                        { time: "16:00", type: "visit", title: "海滨长廊", desc: "骑车沿着海滨路吹风，非常舒服，不堵车。" },
+                        { time: "19:00", type: "food", title: "晚餐：蚝烙 & 粿条汤", desc: "寻找【老妈宫粽球】附近的巷子里的蚝烙，或者【荣香蚝烙】（如果开门）。", address: "外马路附近" }
+                    ]
+                },
+                {
+                    date: "2月20日 (大年初四)",
+                    title: "转战潮州 · 古城探秘",
+                    city: "潮州",
+                    weather: "15-21°C 晴",
+                    location: "住宿推荐：湘桥区南堤路或开元路周边（避开牌坊街主街，也不要住太远）",
+                    searchKey: "潮州开元寺周边民宿",
+                    activities: [
+                        { time: "10:00", type: "transport", title: "前往潮州", desc: "建议退掉汕头的车，打车/高铁去潮州，再在潮州租车。异地还车很难找。" },
+                        { time: "12:30", type: "food", title: "午餐：潮州粿汁", desc: "【开元上西平咸水粿】或者路边看本地人多的粿汁店。不要去牌坊街主街吃正餐。", address: "开元路/上西平路" },
+                        { time: "14:30", type: "visit", title: "广济桥 (湘子桥)", desc: "必去景点。如果是'过河拆桥'时间（通常下午5:30左右），可以看梭船拆解。", address: "环城东路" },
+                        { time: "18:00", type: "food", title: "晚餐：阿八弟牛肉丸 或 官塘", desc: "如果愿意骑远一点去【官塘兄弟牛肉】，那里像大排档一样热闹且正宗。不想跑就在古城边找【老迹牛肉】。", address: "官塘镇 或 上水门街" },
+                        { time: "20:00", type: "visit", title: "广济楼灯光秀", desc: "晚上在江边看灯光秀，人很多，注意孩子安全。" }
+                    ]
+                },
+                {
+                    date: "2月21日 (大年初五)",
+                    title: "潮州闲逛 · 巷弄寻宝",
+                    city: "潮州",
+                    weather: "16-24°C 多云",
+                    activities: [
+                        { time: "08:30", type: "food", title: "早餐：肠粉 (加花生酱)", desc: "潮州肠粉和汕头不同，有花生酱。推荐【阿明肠粉】或西马路上的小店。", address: "府城西马路" },
+                        { time: "10:00", type: "visit", title: "西马路 & 甲第巷", desc: "这两条路比牌坊街更有味道。骑车慢慢逛，看老宅子。可以买点【腐乳饼】当手信。", address: "西马路" },
+                        { time: "12:30", type: "food", title: "午餐：卤鹅饭", desc: "【溪口刘卜鹅肉店】或者【如果是狮头鹅】。鹅肝、鹅肠是极品。", address: "上西平路" },
+                        { time: "15:00", type: "visit", title: "泰佛殿 / 慧如公园", desc: "如果古城人太多，骑车去江对岸的泰佛殿，假装在泰国，拍照很出片。" },
+                        { time: "18:30", type: "food", title: "晚餐：鱼生 (慎选) 或 砂锅粥", desc: "敢吃生的去【官塘鱼生】。不敢吃就去吃海鲜砂锅粥，随便一家大排档只要海鲜活的都好吃。", address: "枫春路附近" }
+                    ]
+                },
+                {
+                    date: "2月22日 (大年初六)",
+                    title: "最后冲刺 · 满载而归",
+                    city: "返程",
+                    weather: "17-25°C 晴",
+                    activities: [
+                        { time: "09:00", type: "food", title: "早餐：猪脚圈 & 春饼", desc: "在市场周边买点炸物。再去菜市场买点牛肉丸（真空包装）带回家。", address: "西门市场" },
+                        { time: "11:00", type: "visit", title: "还车 & 喝茶", desc: "找个茶馆（如【载阳茶馆】听曲喝茶，虽略商业但体验好）坐坐，消磨时间。", address: "牌坊街" },
+                        { time: "14:00", type: "transport", title: "前往机场/高铁站", desc: "春节返程高峰，至少提前3小时出发去潮汕站/揭阳机场。" }
+                    ]
+                }
+            ];
+
+            const tips = [
+                { title: "春节营业情况", content: "初二开始，大部分知名老店已开门，但小巷子里的家庭作坊可能休到初四。备选方案很重要（比如看见哪家本地人多就进哪家，不要死磕攻略）。" },
+                { title: "住宿预订策略", content: "必须现在（2025年底前）预订！春节期间价格会涨2-3倍。汕头住【万象城】附近方便去龙眼路吃；潮州住【开元寺】外围，别住牌坊街里面（吵且车进不去）。" },
+                { title: "租车防坑", content: "1. 提前在小红书/咸鱼找好本地车行预订。2. 必须戴头盔（交警查得严）。3. 一辆车通常限载2人（1大1小），一家三口建议租两辆车，或者租一辆汽车+步行。" },
+                { title: "美食避雷", content: "1. 尽量不在牌坊街主街买特产（贵且不正宗）。2. 看到排队超过20米的网红店（如某苑、某八合里）直接放弃，味道差别没那么大，时间更宝贵。" },
+                { title: "宰客提示", content: "问价再点菜！尤其是海鲜大排档。问清楚是'一斤'还是'一份'，'一两'还是'一只'。" }
+            ];
+
+            return (
+                <div className="max-w-md mx-auto bg-white min-h-screen shadow-xl overflow-hidden relative pb-20">
+                    {/* Header Image Area */}
+                    <div className="bg-red-800 text-white px-6 pt-6 pb-12 rounded-b-3xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/chinese-new-year.png')]"></div>
+                        <div className="relative z-10 mt-4">
+                            <h1 className="text-3xl font-bold serif mb-2">2026春节 · 潮汕</h1>
+                            <p className="text-red-100 text-sm">一家三口的寻味避雷之旅</p>
+                            <div className="mt-4 flex gap-2 text-xs">
+                                <span className="bg-red-700 px-3 py-1 rounded-full border border-red-600">2.18 - 2.22</span>
+                                <span className="bg-red-700 px-3 py-1 rounded-full border border-red-600">5天4晚</span>
+                                <span className="bg-red-700 px-3 py-1 rounded-full border border-red-600">🛵 骑行漫游</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation Tabs */}
+                    <div className="flex justify-center -mt-6 relative z-20 px-4">
+                        <div className="bg-white rounded-full shadow-lg p-1 flex w-full max-w-xs">
+                            <button 
+                                onClick={() => setActiveTab('itinerary')}
+                                className={`flex-1 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeTab === 'itinerary' ? 'bg-red-600 text-white shadow-md' : 'text-gray-500'}`}
+                            >
+                                行程表
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('tips')}
+                                className={`flex-1 py-2 rounded-full text-sm font-medium transition-all duration-300 ${activeTab === 'tips' ? 'bg-red-600 text-white shadow-md' : 'text-gray-500'}`}
+                            >
+                                避坑指南
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="p-4 pt-6">
+                        
+                        {/* Itinerary Tab */}
+                        {activeTab === 'itinerary' && (
+                            <div className="space-y-6">
+                                {/* Day Selector */}
+                                <div className="flex overflow-x-auto gap-3 pb-2 hide-scrollbar">
+                                    {schedule.map((day, index) => (
+                                        <button 
+                                            key={index}
+                                            onClick={() => setSelectedDay(index)}
+                                            className={`flex-shrink-0 w-16 h-20 rounded-xl flex flex-col items-center justify-center border-2 transition-all ${selectedDay === index ? 'border-red-600 bg-red-50' : 'border-gray-200 bg-white'}`}
+                                        >
+                                            <span className={`text-xs font-bold ${selectedDay === index ? 'text-red-600' : 'text-gray-400'}`}>Day {index + 1}</span>
+                                            <span className={`text-lg font-bold ${selectedDay === index ? 'text-gray-800' : 'text-gray-600'}`}>{day.date.split('(')[0].split('月')[1]}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Day Details Card */}
+                                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 map-card">
+                                    <div className="flex justify-between items-start mb-4 border-b border-gray-100 pb-3">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-gray-800">{schedule[selectedDay].title}</h2>
+                                            <div className="flex items-center gap-2 mt-1 text-gray-500 text-xs">
+                                                <span>📍 {schedule[selectedDay].city}</span>
+                                                <span>⛅ {schedule[selectedDay].weather}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {schedule[selectedDay].location && (
+                                        <div className="bg-orange-50 p-3 rounded-lg mb-4 border border-orange-100">
+                                            <div className="flex items-start gap-2">
+                                                <div className="mt-1 text-orange-500"><IconHotel /></div>
+                                                <div>
+                                                    <p className="text-xs font-bold text-orange-800 mb-1">今日住宿区域推荐</p>
+                                                    <p className="text-xs text-orange-700 leading-relaxed">{schedule[selectedDay].location}</p>
+                                                    <div className="mt-2 flex items-center bg-white/50 rounded px-2 py-1 w-fit">
+                                                        <span className="text-[10px] text-gray-500 uppercase tracking-wider">APP定位搜:</span>
+                                                        <span className="text-xs font-medium ml-1 text-orange-900 truncate max-w-[180px]">{schedule[selectedDay].searchKey}</span>
+                                                        <CopyButton text={schedule[selectedDay].searchKey} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-6 relative">
+                                        {/* Vertical Line */}
+                                        <div className="absolute left-[9px] top-2 bottom-2 w-[2px] bg-gray-100"></div>
+
+                                        {schedule[selectedDay].activities.map((activity, idx) => (
+                                            <div key={idx} className="relative pl-8">
+                                                <div className={`absolute left-0 top-1 w-5 h-5 rounded-full border-2 flex items-center justify-center bg-white z-10 
+                                                    ${activity.type === 'food' ? 'border-orange-400 text-orange-500' : 
+                                                      activity.type === 'arrival' || activity.type === 'transport' ? 'border-blue-400 text-blue-500' :
+                                                      'border-green-400 text-green-500'}`}>
+                                                    <div className={`w-2 h-2 rounded-full ${activity.type === 'food' ? 'bg-orange-400' : activity.type === 'transport' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                                                </div>
+                                                
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-gray-400 mb-0.5">{activity.time}</span>
+                                                    <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                                                        {activity.title}
+                                                        {activity.address && <CopyButton text={activity.address} />}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600 mt-1 leading-relaxed bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                                        {activity.desc}
+                                                    </p>
+                                                    {activity.address && (
+                                                        <a 
+                                                            href={`https://uri.amap.com/search?keyword=${encodeURIComponent(activity.city + activity.address)}`}
+                                                            target="_blank"
+                                                            className="text-xs text-blue-600 mt-1 inline-flex items-center hover:underline"
+                                                        >
+                                                            打开地图导航 &rarr;
+                                                        </a>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tips Tab */}
+                        {activeTab === 'tips' && (
+                            <div className="space-y-4">
+                                <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="text-red-600"><IconAlert /></div>
+                                        <h3 className="font-bold text-red-800">春节特别预警</h3>
+                                    </div>
+                                    <p className="text-sm text-red-700 leading-relaxed">
+                                        春节期间（尤其是初二到初五），潮州古城和汕头小公园区域交通管制，汽车根本进不去。
+                                        <br/><br/>
+                                        <strong>关于小电驴：</strong> 
+                                        一定要戴头盔！一定要戴头盔！交警春节不放假。汕头共享电单车只能在指定区域还车，乱停罚款很重，建议租私人车行的车（需压身份证或押金），并提前确认是否允许跨区骑行。
+                                    </p>
+                                </div>
+
+                                {tips.map((tip, idx) => (
+                                    <div key={idx} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                                        <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                                            <span className="bg-yellow-100 text-yellow-700 w-6 h-6 rounded-full flex items-center justify-center text-xs">{idx + 1}</span>
+                                            {tip.title}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 leading-relaxed pl-8">
+                                            {tip.content}
+                                        </p>
+                                    </div>
+                                ))}
+
+                                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                                    <h3 className="font-bold text-blue-800 mb-2">🛵 推荐租车区域</h3>
+                                    <ul className="text-sm text-blue-700 space-y-2 list-disc list-inside">
+                                        <li><strong>汕头：</strong> 高铁站附近不如市区便宜。建议打车到【长平路】或【万象城】附近，找修车铺或专门的租车行。</li>
+                                        <li><strong>潮州：</strong> 【开元路】尾段或【环城南路】有很多租车点。均价春节可能会涨到60-100元/天。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Floating Action Button for Map (Decoration/Concept) */}
+                    <div className="fixed bottom-6 right-6">
+                        <a 
+                            href="https://ditu.amap.com/search?query=汕头美食" 
+                            target="_blank"
+                            className="bg-red-600 hover:bg-red-700 text-white rounded-full p-4 shadow-lg flex items-center gap-2 transition-colors"
+                        >
+                            <span className="text-sm font-bold">全景地图</span>
+                            <IconMap />
+                        </a>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
