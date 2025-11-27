@@ -270,7 +270,7 @@
                                                     </p>
                                                     {activity.address && (
                                                         <a 
-                                                            href={`https://uri.amap.com/search?keyword=${encodeURIComponent(activity.city + activity.address)}`}
+                                                            href={`https://uri.amap.com/search?keyword=${encodeURIComponent(schedule[selectedDay].city + " " + activity.address)}`}
                                                             target="_blank"
                                                             className="text-xs text-blue-600 mt-1 inline-flex items-center hover:underline"
                                                         >
